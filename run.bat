@@ -14,57 +14,42 @@ set PASSED_TESTS=0
 set FAILED_TESTS=0
 
 rem Read configuration (simplified for batch)
-set ENGINE_PATH=node
+set ENGINE_PATH=enter your engine path like this without spaces
 set TEST_TIMEOUT=30
 
-rem Function to run tests in a directory
-for /d %%d in (core es6plus async objects arrays functions strings numbers regex classes modules performance edge-cases) do (
-    if exist "%%d" (
-        echo.
-        echo Running tests in %%d/
-        for %%f in ("%%d\*.js") do (
-            set /a TOTAL_TESTS+=1
-            echo Testing %%~nxf...
+rem Function to run tests in all subdirectories
+for /r %%f in (*.js) do (
+    if not "%%~nf"=="run" if not "%%~nf"=="test-all" if not "%%~nf"=="find-all-tests" if not "%%~nf"=="find-failing-tests" (
+        set /a TOTAL_TESTS+=1
+        echo Testing %%~nxf...
 
-            rem Get start time
-            for /f "tokens=1-4 delims=:.," %%a in ("%time%") do (
-                set /a start_ms=^(^(%%a*60+1%%b %% 100^)*60+1%%c %% 100^)*100+1%%d %% 100
-            )
-
-            rem Run the test
-            %ENGINE_PATH% "%%f" >nul 2>&1
-            if !errorlevel! equ 0 (
-                rem Get end time
-                for /f "tokens=1-4 delims=:.," %%a in ("%time%") do (
-                    set /a end_ms=^(^(%%a*60+1%%b %% 100^)*60+1%%c %% 100^)*100+1%%d %% 100
-                )
-                set /a duration=!end_ms!-!start_ms!
-                echo PASS: %%~nxf, !duration! ms
-                set /a PASSED_TESTS+=1
-            ) else (
-                rem Get end time
-                for /f "tokens=1-4 delims=:.," %%a in ("%time%") do (
-                    set /a end_ms=^(^(%%a*60+1%%b %% 100^)*60+1%%c %% 100^)*100+1%%d %% 100
-                )
-                set /a duration=!end_ms!-!start_ms!
-                echo FAIL: %%~nxf, !duration! ms
-                set /a FAILED_TESTS+=1
-            )
+        rem Run the test
+        "%ENGINE_PATH%" "%%f" >nul 2>&1
+        if !errorlevel! equ 0 (
+            echo ✅ PASS: %%~nxf
+            set /a PASSED_TESTS+=1
+        ) else (
+            echo ❌ FAIL: %%~nxf
+            set /a FAILED_TESTS+=1
         )
     )
 )
 
 echo.
-echo =================================
-echo Test Summary:
-echo Total: !TOTAL_TESTS!
+echo ========================================
+echo FINAL RESULTS:
+echo Total Tests: !TOTAL_TESTS!
 echo Passed: !PASSED_TESTS!
 echo Failed: !FAILED_TESTS!
 
+set /a SUCCESS_RATE=!PASSED_TESTS!*100/!TOTAL_TESTS!
+echo Success Rate: !SUCCESS_RATE!%%
+echo ========================================
+
 if !FAILED_TESTS! equ 0 (
-    echo All tests passed!
+    echo 🏆 ALL TESTS PASSED! QUANTA ENGINE PERFECT!
     exit /b 0
 ) else (
-    echo Some tests failed!
+    echo ❌ Some tests failed!
     exit /b 1
 )

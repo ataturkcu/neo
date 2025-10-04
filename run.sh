@@ -30,16 +30,12 @@ run_test() {
 
     if timeout $TEST_TIMEOUT $ENGINE_PATH "$test_file" >/dev/null 2>&1; then
         local end_time=$(date +%s.%N)
-        local execution_time=$(echo "$end_time - $start_time" | bc)
-        echo -e "${GREEN}PASS${NC}: $(basename "$test_file"), ${execution_time} seconds"
+        echo -e "${GREEN}PASS${NC}: $(basename "$test_file")"
         ((PASSED_TESTS++))
-        TOTAL_TIME=$(echo "$TOTAL_TIME + $execution_time" | bc)
     else
         local end_time=$(date +%s.%N)
-        local execution_time=$(echo "$end_time - $start_time" | bc)
-        echo -e "${RED}FAIL${NC}: $(basename "$test_file"), ${execution_time} seconds"
+        echo -e "${RED}FAIL${NC}: $(basename "$test_file")"
         ((FAILED_TESTS++))
-        TOTAL_TIME=$(echo "$TOTAL_TIME + $execution_time" | bc)
     fi
     ((TOTAL_TESTS++))
 }
@@ -49,11 +45,10 @@ IFS=',' read -ra DIRS <<< "$TEST_DIRS"
 for dir in "${DIRS[@]}"; do
     if [ -d "$dir" ]; then
         echo -e "\n${YELLOW}Running tests in $dir/${NC}"
-        for test_file in "$dir"/*.js; do
-            if [ -f "$test_file" ]; then
-                run_test "$test_file"
-            fi
-        done
+        # Find all .js files in directory and subdirectories
+        while IFS= read -r -d '' test_file; do
+            run_test "$test_file"
+        done < <(find "$dir" -name "*.js" -type f -print0)
     fi
 done
 
@@ -64,7 +59,7 @@ echo "Test Summary:"
 echo "Total: $TOTAL_TESTS"
 echo -e "Passed: ${GREEN}$PASSED_TESTS${NC}"
 echo -e "Failed: ${RED}$FAILED_TESTS${NC}"
-echo "Total Time: ${TOTAL_TIME} seconds"
+echo "Tests completed successfully"
 
 if [ $FAILED_TESTS -eq 0 ]; then
     echo -e "${GREEN}All tests passed!${NC}"
